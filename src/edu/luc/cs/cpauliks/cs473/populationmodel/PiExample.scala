@@ -1,4 +1,4 @@
-package edu.luc.cs.cpauliks.cs473.populationmodel
+package edu.luc.cs.cpauliks.cs473.piModel
 
 import akka.actor.{Actor, PoisonPill}
 import akka.routing.{Routing, CyclicIterator}
