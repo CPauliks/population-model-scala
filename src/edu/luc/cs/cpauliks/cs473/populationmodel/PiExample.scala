@@ -9,7 +9,7 @@ import java.util.concurrent.CountDownLatch
 
 object Pi extends App {
 
-	calculate(nrOfWorkers = 16, nrOfElements = 10000, nrOfMessages = 10000)
+	calculate(nrOfWorkers = 128, nrOfElements = 20000, nrOfMessages = 20000)
 
 	sealed trait PiMessage
 
