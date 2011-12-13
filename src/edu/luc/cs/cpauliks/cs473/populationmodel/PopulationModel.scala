@@ -13,19 +13,19 @@ object PopulationModel extends App {
   trait MessageFromAnimal
   trait MessageToAnimal
   
+  //Hare
   case class NewHareLocation(oldX: Int, oldY: Int, newX: Int, newY: Int, hare: ActorRef) extends MessageFromAnimal
   case class HareCanReproduce(xPos: Int, yPos: Int) extends MessageFromAnimal
   case class HareDied(xPos: Int, yPos: Int, hare: ActorRef) extends MessageFromAnimal
-  
-  //TODO: Remove LynxLookingForHare as Lynx will not ask to eat, they will be told they got to eat
-  case class LynxReproduced(newLynx: ActorRef) extends MessageFromAnimal
-  case class LynxLookingForHare(xPos: Int, yPos: Int) extends MessageFromAnimal
-  //TODO: Add xPos and yPox to LynxDied so that World can remove the Lynx from lynxLocations
-  case class LynxDied(lynx: ActorRef) extends MessageFromAnimal
-  
   case class HarePong(hare: ActorRef) extends MessageFromAnimal
+  
+  //Lynx
+  case class NewLynxLocation(oldX: Int, oldY: Int, newX: Int, newY: Int, hare: ActorRef) extends MessageFromAnimal
+  case class LynxReproduced(newLynx: ActorRef) extends MessageFromAnimal
+  case class LynxDied(lynx: ActorRef, xPos: Int, yPos: Int) extends MessageFromAnimal
   case class LynxPong(lynx: ActorRef) extends MessageFromAnimal
   
+  //Action
   case object Move extends MessageToAnimal
   case object Ping extends MessageToAnimal
   case object Eat extends MessageToAnimal 
@@ -79,8 +79,6 @@ object PopulationModel extends App {
   class Lynx(xPosition: Int, yPosition: Int, maxAge: Int, startingEnergy: Int, energyPerHare: Int, energyToReproduce: Int) extends Animal(xPosition, yPosition, maxAge) {
    var energy = startingEnergy
    
-   //TODO: Add chase case for Eat to simply add energyPerHare to energy, as the logic eating for should be moved to World
-   
     def receive = {
       case Ping => self reply LynxPong(self)
 	  case Move => {
@@ -90,19 +88,14 @@ object PopulationModel extends App {
 	      changeLocation()
 	    }  
 	    else {
-	      self reply LynxDied(self)
+	      self reply LynxDied(self, xPosition, yPosition)
 	      self.stop()
 	    }
 	  }
-	  case Eat => tryToEat()
+	  case Eat => energy+= energyPerHare
 	  case Reproduce => 
     }
-   
-   //TODO: Delete this function, we don't need it anymore.
-   def tryToEat() = {
      
-   }
-    
     def checkIfStillAlive() = {
       if(age <= maxAge && energy > 0) true else false
     }
@@ -134,8 +127,7 @@ object PopulationModel extends App {
     private val activeHares = new HashSet[ActorRef]()
     private val activeLynx = new HashSet[ActorRef]()
     private val hareLocations = Array.ofDim[HashSet[ActorRef]](worldSizeX, worldSizeY)
-    
-    //TODO: add lynxLocations array same as hareLocations  
+    private val lynxLocations = Array.ofDim[HashSet[ActorRef]](worldSizeX, worldSizeY)
     
     private var moving = false;
     private var reproducing = false;
@@ -156,12 +148,18 @@ object PopulationModel extends App {
         }
         checkIfCompleteAndStartNextStage()
       }
+      
       case LynxLookingForHare(x, y) => {
         self reply checkForHareAndEat(x, y)
       }
     }
     
     //TODO:  Add checkIfCompleteAndStartNextStage. Should make sure activeHares and activeLynx are empty and then check which boolean flag is set.  Flip to the next flag.  Repopulate ActiveHares and ActiveLynx. Send out the messages for the next tick. If we are starting the next year, print out the current size of hares and lynx
+    def checkIfCompleteAndStartNextStage(){
+      
+      
+    }
+    
     
     override def prestart() {
       createHares()
@@ -178,10 +176,14 @@ object PopulationModel extends App {
       }
     }
     
+    
     def createLynx() = {
-      //TODO: change this to the same style as createHares so that Lynx are added to lynxLocations
       for (i <- 0 until initialLynx) {
-        lynx += actorOf(new Lynx(rng.nextInt(worldSizeX), rng.nextInt(worldSizeY), maxLynxAge, rng.nextInt(3 * energyPerHareEaten), energyPerHareEaten, lynxEnergyToReproduce)).start()
+        val X = rng.nextInt(worldSizeX)
+        val Y = rng.nextInt(worldSizeY)
+        val newLynx = actorOf(new Lynx(rng.nextInt(worldSizeX), rng.nextInt(worldSizeY), maxLynxAge, rng.nextInt(3 * energyPerHareEaten), energyPerHareEaten, lynxEnergyToReproduce)).start()
+        lynx += newLynx
+        lynxLocations(X)(Y) += newLynx
       }
     }
     
