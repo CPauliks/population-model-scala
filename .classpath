@@ -3,8 +3,12 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Users/Chris/Downloads/akka-actors-1.3-RC1/lib/akka/akka-actor-1.3-RC1.jar" sourcepath="C:/Users/Chris/Downloads/akka-actors-1.3-RC1/src/akka/akka-actor-1.3-RC1-sources.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="lib/akka-actor-1.3-RC1.jar" sourcepath="lib/akka-actor-1.3-RC1-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/population-model-scala/lib/akka-actor-1.3-RC1-docs.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
