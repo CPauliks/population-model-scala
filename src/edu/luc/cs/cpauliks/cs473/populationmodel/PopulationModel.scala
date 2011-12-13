@@ -17,8 +17,10 @@ object PopulationModel extends App {
   case class HareCanReproduce(xPos: Int, yPos: Int) extends MessageFromAnimal
   case class HareDied(xPos: Int, yPos: Int, hare: ActorRef) extends MessageFromAnimal
   
+  //TODO: Remove LynxLookingForHare as Lynx will not ask to eat, they will be told they got to eat
   case class LynxReproduced(newLynx: ActorRef) extends MessageFromAnimal
   case class LynxLookingForHare(xPos: Int, yPos: Int) extends MessageFromAnimal
+  //TODO: Add xPos and yPox to LynxDied so that World can remove the Lynx from lynxLocations
   case class LynxDied(lynx: ActorRef) extends MessageFromAnimal
   
   case class HarePong(hare: ActorRef) extends MessageFromAnimal
@@ -26,12 +28,12 @@ object PopulationModel extends App {
   
   case object Move extends MessageToAnimal
   case object Ping extends MessageToAnimal
-  case object Eat extends MessageToAnimal
+  case object Eat extends MessageToAnimal 
   case object Reproduce extends MessageToAnimal
   
   abstract class Animal(xPosition: Int, yPosition: Int, maxAge: Int) extends Actor{
     val rng = new Random()
-    var age: Int = _
+    var age = 0
     var xPos = xPosition
     var yPos = yPosition
     
@@ -76,7 +78,9 @@ object PopulationModel extends App {
   
   class Lynx(xPosition: Int, yPosition: Int, maxAge: Int, startingEnergy: Int, energyPerHare: Int, energyToReproduce: Int) extends Animal(xPosition, yPosition, maxAge) {
    var energy = startingEnergy
-    
+   
+   //TODO: Add chase case for Eat to simply add energyPerHare to energy, as the logic eating for should be moved to World
+   
     def receive = {
       case Ping => self reply LynxPong(self)
 	  case Move => {
@@ -94,7 +98,7 @@ object PopulationModel extends App {
 	  case Reproduce => 
     }
    
-   
+   //TODO: Delete this function, we don't need it anymore.
    def tryToEat() = {
      
    }
@@ -130,9 +134,14 @@ object PopulationModel extends App {
     private val activeHares = new HashSet[ActorRef]()
     private val activeLynx = new HashSet[ActorRef]()
     private val hareLocations = Array.ofDim[HashSet[ActorRef]](worldSizeX, worldSizeY)
+    
+    //TODO: add lynxLocations array same as hareLocations  
+    
     private var moving = false;
     private var reproducing = false;
     private var eating = false;
+    
+    //TODO: Add cases for each messageFromAnimal
     
     def receive = {
       case HarePong(actor) => {
@@ -152,6 +161,8 @@ object PopulationModel extends App {
       }
     }
     
+    //TODO:  Add checkIfCompleteAndStartNextStage. Should make sure activeHares and activeLynx are empty and then check which boolean flag is set.  Flip to the next flag.  Repopulate ActiveHares and ActiveLynx. Send out the messages for the next tick. If we are starting the next year, print out the current size of hares and lynx
+    
     override def prestart() {
       createHares()
       createLynx()
@@ -168,14 +179,16 @@ object PopulationModel extends App {
     }
     
     def createLynx() = {
+      //TODO: change this to the same style as createHares so that Lynx are added to lynxLocations
       for (i <- 0 until initialLynx) {
         lynx += actorOf(new Lynx(rng.nextInt(worldSizeX), rng.nextInt(worldSizeY), maxLynxAge, rng.nextInt(3 * energyPerHareEaten), energyPerHareEaten, lynxEnergyToReproduce)).start()
       }
     }
     
+    //TODO: Change this method into looping through hareLocations and lynxLocations and check each. Lynx are more rare, so first check if lynx are at a location, and if so, see how many hares are there.  Kill as many hares as there are lynx, if possible, and message each lynx that got to eat.
     def checkForHareAndEat(xPos: Int, yPos: Int) =  {
-      val trueX = if(xPos > 99) xPos - 100 else xPos
-      val trueY = if(yPos > 99) yPos - 100 else yPos
+      val trueX = if(xPos >= worldSizeX) xPos - worldSizeX else xPos
+      val trueY = if(yPos >= worldSizeY) yPos - worldSizeY else yPos
       hareLocations(trueX)(trueY).headOption match {
         case Some(hare) => {
           hareLocations(trueX)(trueY) -= hare
