@@ -147,8 +147,6 @@ object PopulationModel extends App {
     private var reproducing = false
     private var eating = true
     
-    //TODO: Add cases for each messageFromAnimal
-    
     def receive = {
       
       case HarePong(actor) => {
@@ -178,6 +176,9 @@ object PopulationModel extends App {
       
     }
     
+    /**
+     * Tries to create a Hare at the given location and add it to the simulation
+     */
     def tryCreateNewHareAtLocation(xPos: Int, yPos: Int) = {
       if(rng.nextInt(maxHareBirthRate) <= hareBirthRate) {
         val trueX = correctPosition(xPos, worldSizeX)
@@ -187,6 +188,25 @@ object PopulationModel extends App {
       }
     }
     
+    /**
+     * Tells Lynx that are standing on Hares to gain energy as if they had eaten them.
+     */
+    def tellLynxToEat() = {
+      for(x <- 0 until worldSizeX) {
+        for(y <- 0 until worldSizeY) {
+          val lynxAtLocation = lynxLocations(x)(y)
+          if (lynxAtLocation.size != 0) {
+            
+          }
+            
+        }
+      }
+      //TODO: Finish this method
+    }
+    
+    /**
+     * Adds a newly created actor to the simulation at a given location.
+     */
     def addActor(xPos: Int, yPos: Int, actor: ActorRef, actorSet: HashSet[ActorRef], locationArray: Array[Array[HashSet[ActorRef]]]) = {
       val trueX = correctPosition(xPos, worldSizeX)
       val trueY = correctPosition(yPos, worldSizeY)
