@@ -132,7 +132,7 @@ object PopulationModel extends App {
     private val maxLynxAge = 20 //Recommended 0-50
     
     /**
-     * Variables used by the simulation to manange the current state of the world.
+     * Variables used by the simulation to manage the current state of the world.
      */
     private val rng = new Random();
     private val hareSet = new HashSet[ActorRef]()
@@ -287,6 +287,16 @@ object PopulationModel extends App {
       }
     }
     
+    /**
+     * Send a message msg to all actors in a given Set
+     */
+    def messageAll(actors: Set[ActorRef], msg: Any) = {
+     for (actor <- actors) {
+       actor ! msg
+     }
+    }
+    
   }
+  
   
 }
