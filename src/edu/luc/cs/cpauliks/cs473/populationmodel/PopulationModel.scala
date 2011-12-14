@@ -192,18 +192,18 @@ object PopulationModel extends App {
       if(activeHares.isEmpty && activeLynx.isEmpty) {
         if(moving) {
           moving = false
-          println ("Move phase complete!")
+          //println ("Move phase complete!")
           startEat()
         }
         else if (reproducing) {
           reproducing = false
-          println ("Reproduction phase complete!")
+          //println ("Reproduction phase complete!")
           cycleWrapUp()
           startMove()
         }
         else if (eating) {
           eating = false
-          println ("Eat phase complete!")
+          //println ("Eat phase complete!")
           startReproduce()
         }
       }
@@ -292,8 +292,10 @@ object PopulationModel extends App {
      * Adds a newly created actor to the simulation at a given location.
      */
     def addActor(xPos: Int, yPos: Int, actor: ActorRef, actorSet: HashSet[ActorRef], locationArray: Array[Array[HashSet[ActorRef]]]) = {
+      val trueX = correctPosition(xPos, worldSizeX)
+      val trueY = correctPosition(yPos, worldSizeY)
       actorSet += actor
-      locationArray(xPos)(yPos) += actor
+      locationArray(trueX)(trueY) += actor
     }
     
     /**
