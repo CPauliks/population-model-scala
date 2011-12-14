@@ -7,6 +7,8 @@ import scala.util.Random
 
 object PopulationModel extends App {
   
+  val world = actorOf[World].start()
+  
   /**
    * Messages passed between the World and the Animals
    */
@@ -30,6 +32,7 @@ object PopulationModel extends App {
   case object Ping extends MessageToAnimal
   case object Eat extends MessageToAnimal 
   case object Reproduce extends MessageToAnimal
+  case class CorrectLocation(xPos: Int, yPos: Int) extends MessageToAnimal
   
   abstract class Animal(xPosition: Int, yPosition: Int, maxAge: Int) extends Actor{
     val rng = new Random()
@@ -48,7 +51,7 @@ object PopulationModel extends App {
       yPos += (if(forwardY) rng.nextInt(2) else (rng.nextInt(2) * -1))
     }
     
-    def checkIfStillAlive: Boolean
+    def checkIfStillAlive(): Boolean
     
   }
   
@@ -68,6 +71,10 @@ object PopulationModel extends App {
         } 
       }
       case Reproduce => self reply HareCanReproduce(xPos, yPos)
+      case CorrectLocation(x, y) => {
+        xPos = x
+        yPos = y
+      }
       
     }
     
@@ -103,6 +110,10 @@ object PopulationModel extends App {
 	      self reply LynxReproduced(xPos, yPos, newLynx)
 	    }
 	  }
+	  case CorrectLocation(x, y) => {
+        xPos = x
+        yPos = y
+      }
     }
      
     def canReproduce() = {
@@ -120,8 +131,8 @@ object PopulationModel extends App {
      * Values for the simulation
      * Uses values from the NetLogo Tutorial
      */
-    private val worldSizeX = 100 //Not in NL Tutorial, but needed here
-    private val worldSizeY = 100
+    private val worldSizeX = 50 //Not in NL Tutorial, but needed here
+    private val worldSizeY = 50
     private val initialHares = 100 //Recommended 0-1000
     private val initialLynx = 20 //Recommended 0-100
     private val hareBirthRate = 35 //Recommended 0-200
@@ -142,6 +153,13 @@ object PopulationModel extends App {
     private val hareLocations = Array.ofDim[HashSet[ActorRef]](worldSizeX, worldSizeY)
     private val lynxLocations = Array.ofDim[HashSet[ActorRef]](worldSizeX, worldSizeY)
     
+    for(i <- 0 until worldSizeX) {
+      for (j <- 0 until worldSizeY){
+        hareLocations(i)(j) = new HashSet()
+        lynxLocations(i)(j) = new HashSet()
+      }
+    }
+    
     private var cycle = 0
     private var moving = false
     private var reproducing = false
@@ -151,29 +169,87 @@ object PopulationModel extends App {
       
       case HarePong(actor) => {
         if(activeHares.contains(actor)) {
-          activeHares.remove(actor)
+          activeHares -= actor
         }
         checkIfCompleteAndStartNextStage()
       }
-      case HareDied(xPos, yPos, hare) => removeActor(xPos, yPos, hare, hareSet, activeHares, hareLocations)
+      case HareDied(xPos, yPos, hare) => removeActorDueToDeath(xPos, yPos, hare, hareSet, activeHares, hareLocations)
       case NewHareLocation(oldX, oldY, xPos, yPos, hare) => moveActor(oldX, oldY, xPos, yPos, hare, hareSet, hareLocations)
       case HareCanReproduce(xPos, yPos) => tryCreateNewHareAtLocation(xPos, yPos)
         
       case LynxPong(actor) => {
         if(activeLynx.contains(actor)){
-          activeLynx.remove(actor)
+          activeLynx -= actor
         }
         checkIfCompleteAndStartNextStage()
       }
-      case LynxDied(xPos, yPos, lynx) => removeActor(xPos, yPos, lynx, lynxSet, activeLynx, lynxLocations)
+      case LynxDied(xPos, yPos, lynx) => removeActorDueToDeath(xPos, yPos, lynx, lynxSet, activeLynx, lynxLocations)
       case NewLynxLocation(oldX, oldY, xPos, yPos, lynx) => moveActor(oldX, oldY, xPos, yPos, lynx, lynxSet, lynxLocations)
       case LynxReproduced(xPos, yPos, lynx) => addActor(xPos, yPos, lynx, lynxSet, lynxLocations)
     }
     
-    //TODO:  Add checkIfCompleteAndStartNextStage. Should make sure activeHares and activeLynx are empty and then check which boolean flag is set.  Flip to the next flag.  Repopulate ActiveHares and ActiveLynx. Send out the messages for the next tick. If we are starting the next year, print out the current size of hares and lynx
     def checkIfCompleteAndStartNextStage() = {
-      
-      
+      if(activeHares.isEmpty && activeLynx.isEmpty) {
+        if(moving) {
+          moving = false
+          println ("Move phase complete!")
+          startEat()
+        }
+        else if (reproducing) {
+          reproducing = false
+          println ("Reproduction phase complete!")
+          cycleWrapUp()
+          startMove()
+        }
+        else if (eating) {
+          eating = false
+          println ("Eat phase complete!")
+          startReproduce()
+        }
+      }
+    }
+    
+    def startEat() = {
+      eating = true
+      activeLynx ++= lynxSet
+      tellLynxToEat()
+      messageAll(hareSet, Ping)
+      messageAll(lynxSet, Ping)
+    }
+    
+    def startMove() = {
+    	moving = true
+    	activeHares ++= hareSet
+    	activeLynx ++= lynxSet
+    	messageAll(hareSet, Move)
+    	messageAll(lynxSet, Move)
+    	messageAll(hareSet, Ping)
+    	messageAll(lynxSet, Ping)
+    }
+    
+    def startReproduce() = {
+      reproducing = true
+      activeHares ++= hareSet
+      activeLynx ++= lynxSet
+      messageAll(hareSet, Reproduce)
+      messageAll(lynxSet, Reproduce)
+      messageAll(hareSet, Ping)
+      messageAll(lynxSet, Ping)
+    }
+    
+    def cycleWrapUp() = {
+      println("Ending populations for cycle:  " + cycle)
+      println("Hare population:  " + hareSet.size)
+      println("Lynx population:  " + lynxSet.size)
+      cycle += 1
+      println("Press Enter to continue")
+      val input = io.Source.stdin.getLine(0)
+      if(hareSet.isEmpty || lynxSet.isEmpty) {
+        println("The simulation has ended.")
+        messageAll(hareSet, PoisonPill)
+        messageAll(lynxSet, PoisonPill)
+        self.stop()
+      }
     }
     
     /**
@@ -192,26 +268,32 @@ object PopulationModel extends App {
      * Tells Lynx that are standing on Hares to gain energy as if they had eaten them.
      */
     def tellLynxToEat() = {
+      var totalEaten = 0
       for(x <- 0 until worldSizeX) {
         for(y <- 0 until worldSizeY) {
-          val lynxAtLocation = lynxLocations(x)(y)
-          if (lynxAtLocation.size != 0) {
+          if(!lynxLocations(x)(y).isEmpty){
+            val lynxThatEat  = lynxLocations(x)(y).take(hareLocations(x)(y).size)
+            val haresThatDie = hareLocations(x)(y).take(lynxThatEat.size)
+            messageAll(lynxThatEat, Eat)
+            for(hare <- haresThatDie) {
+              removeActor(x, y, hare, hareSet, activeHares, hareLocations)
+            }
+            totalEaten += lynxThatEat.size
+            messageAll(haresThatDie, PoisonPill)
             
           }
             
         }
       }
-      //TODO: Finish this method
+      println("Hares eaten this cycle:  " + totalEaten)
     }
     
     /**
      * Adds a newly created actor to the simulation at a given location.
      */
     def addActor(xPos: Int, yPos: Int, actor: ActorRef, actorSet: HashSet[ActorRef], locationArray: Array[Array[HashSet[ActorRef]]]) = {
-      val trueX = correctPosition(xPos, worldSizeX)
-      val trueY = correctPosition(yPos, worldSizeY)
       actorSet += actor
-      locationArray(trueX)(trueY) += actor
+      locationArray(xPos)(yPos) += actor
     }
     
     /**
@@ -223,6 +305,7 @@ object PopulationModel extends App {
         val trueOldY = correctPosition(oldY, worldSizeY)
         val trueX = correctPosition(xPos, worldSizeX)
         val trueY = correctPosition(yPos, worldSizeY)
+        if(trueX != xPos && trueY != yPos) actor ! CorrectLocation(trueX, trueY)
         locationArray(trueOldX)(trueOldY) -= actor
         locationArray(trueX)(trueY) += actor
       }
@@ -239,6 +322,18 @@ object PopulationModel extends App {
     	  activeActors -= actor
     	  locationArray(trueX)(trueY) -= actor
       }
+
+    }
+    
+    def removeActorDueToDeath(xPos: Int, yPos: Int, actor: ActorRef, actorSet: HashSet[ActorRef], activeActors: HashSet[ActorRef], locationArray: Array[Array[HashSet[ActorRef]]]) = {
+      if(actorSet contains actor) {
+    	  val trueX = correctPosition(xPos, worldSizeX)
+    	  val trueY = correctPosition(yPos, worldSizeY)
+    	  actorSet -= actor
+    	  activeActors -= actor
+    	  locationArray(trueX)(trueY) -= actor
+      }
+      checkIfCompleteAndStartNextStage()
     }
     
     /**
@@ -248,9 +343,10 @@ object PopulationModel extends App {
     override def preStart() {
       createHares()
       createLynx()
-      checkIfCompleteAndStartNextStage()
+      startMove()
     }
     
+
     /**
      * Corrects for ActorRefs moving outside the world by recalculating their coordinates as somewhere within the world
      * The world can be thought of as a 3d ellipsoid with xRadius worldSizeX/2 and yRadius worldSizeY/2
@@ -258,7 +354,9 @@ object PopulationModel extends App {
      * Values < 0 are mapped as if they returned to worldSize
      */
     def correctPosition(position: Int, worldSize: Int): Int = {
-      if(position >= worldSize) correctPosition(position - worldSize, worldSize) else position
+      if(position >= worldSize) correctPosition(position - worldSize, worldSize)
+      else if (position < 0) correctPosition(position + worldSize, worldSize)
+      else position
     }
     
     /**
@@ -290,9 +388,9 @@ object PopulationModel extends App {
     /**
      * Send a message msg to all actors in a given Set
      */
-    def messageAll(actors: Set[ActorRef], msg: Any) = {
+    def messageAll(actors: HashSet[ActorRef], msg: Any) = {
      for (actor <- actors) {
-       actor ! msg
+       if(actor.isRunning) actor ! msg
      }
     }
     
