@@ -9,6 +9,7 @@ import akka.testkit._
 import java.util.concurrent.TimeUnit
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import akka.testkit.TestActorRef
 import edu.luc.cs.cpauliks.cs473.populationmodel.SimulationMesages._
 
 @RunWith(classOf[JUnitRunner])
