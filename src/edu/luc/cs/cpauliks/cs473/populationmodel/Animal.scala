@@ -40,21 +40,18 @@ import edu.luc.cs.cpauliks.cs473.populationmodel.SimulationMesages._
       
       case Ping => self reply HarePong(self)
       case Move => {
-        age += 1
-        if(checkIfStillAlive()) {
           changeLocation()
           self reply NewHareLocation(oldX, oldY, xPos, yPos, self)
-        }
-        else {
-          self reply HareDied(xPos, yPos, self)
-          self.stop()
-        } 
       }
       case Reproduce => self reply HareCanReproduce(xPos, yPos)
       case CorrectLocation(x, y) => {
         xPos = x
         yPos = y
       }
+      case Age => {
+	    age += 1
+	    if(checkIfStillAlive) None else self reply HareDied(xPos, yPos, self)
+	  }
       
       
     }
@@ -82,24 +79,21 @@ import edu.luc.cs.cpauliks.cs473.populationmodel.SimulationMesages._
     def receive = {
       case Ping => self reply LynxPong(self)
 	  case Move => {
-	    age += 1
-	    energy -= 1
-	    if(checkIfStillAlive()){
 	      changeLocation()
 	      self reply NewLynxLocation(oldX, oldY, xPos, yPos, self)
-	    }  
-	    else {
-	      self reply LynxDied(xPos, yPos, self)
-	      self.stop()
-	    }
 	  }
 	  case Eat => energy += energyPerHare
 	  case Reproduce => {
+	    energy -= 1
 	    if(canReproduce()) {
 	      energy = energy/2
 	      val newLynx = actorOf(new Lynx(xPos, yPos, maxAge, energy, energyPerHare, energyToReproduce)).start()
 	      self reply LynxReproduced(xPos, yPos, newLynx)
 	    }
+	  }
+	  case Age => {
+	    age += 1
+	    if(checkIfStillAlive) None else self reply LynxDied(xPos, yPos, self)
 	  }
 	  case CorrectLocation(x, y) => {
         xPos = x

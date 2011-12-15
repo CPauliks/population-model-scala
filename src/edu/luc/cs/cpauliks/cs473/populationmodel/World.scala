@@ -30,7 +30,9 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 	private var cycle = 0
 	private var moving = false
 	private var reproducing = false
-	private var eating = true
+	private var eating = false
+	private var aging = false
+	
 
 	/**
 	 * Receive method for World
@@ -71,12 +73,16 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 			}
 			else if (reproducing) {
 				reproducing = false
-				cycleWrapUp()
-				startMove()
+				startAge()
 			}
 			else if (eating) {
 				eating = false
 				startReproduce()
+			}
+			else if (aging) {
+			  aging = false
+			  cycleWrapUp()
+			  startMove()
 			}
 		}
 	}
@@ -117,18 +123,36 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 		messageAll(hareSet, Ping)
 		messageAll(lynxSet, Ping)
 	}
+	
+	/**
+	 * Steps for the aging phase of a cycle
+	 */
+	def startAge() = {
+	  aging = true
+	  activeHares ++= hareSet
+	  activeHares ++= hareSet
+	  activeLynx ++= lynxSet
+	  messageAll(hareSet, Age)
+	  messageAll(lynxSet, Age)
+	  messageAll(hareSet, Ping)
+	  messageAll(lynxSet, Ping)
+	}
 
 	/**
 	 * Print out the information from the last cycle.
 	 */
 	def cycleWrapUp() = {
-		println("Ending populations for cycle:  " + cycle)
+		println("Ending populations for cycle  " + cycle)
 		println("Hare population:  " + hareSet.size)
 		println("Lynx population:  " + lynxSet.size)
 		cycle += 1
-		println("Press Enter to continue")
-		val input = io.Source.stdin.getLine(0)
-		if(hareSet.isEmpty || lynxSet.isEmpty) {
+		println("Press Enter to continue or type exit to end the simulation early")
+		val input = io.Source.stdin.getLine(0).trim()
+		var exit = false
+		if(input != null) {
+		  exit = if (input.equalsIgnoreCase("exit")) true else false
+		}
+		if(hareSet.isEmpty || lynxSet.isEmpty || exit ) {
 			println("The simulation has ended.")
 			messageAll(hareSet, PoisonPill)
 			messageAll(lynxSet, PoisonPill)
@@ -236,6 +260,13 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 	override def preStart() {
 		createHares()
 		createLynx()
+	}
+	
+	/**
+	 * End the program once the world has been stopped.
+	 */
+	override def postStop() {
+	  exit(0)
 	}
 
 

@@ -41,7 +41,7 @@ object SimulationMesages {
   case class HarePong(hare: ActorRef) extends MessageFromAnimal
   
   //Lynx
-  case class NewLynxLocation(oldX: Int, oldY: Int, newX: Int, newY: Int, hare: ActorRef) extends MessageFromAnimal
+  case class NewLynxLocation(oldX: Int, oldY: Int, newX: Int, newY: Int, lynx: ActorRef) extends MessageFromAnimal
   case class LynxReproduced(xPos: Int, yPos: Int, newLynx: ActorRef) extends MessageFromAnimal
   case class LynxDied(xPos: Int, yPos: Int, lyxn: ActorRef) extends MessageFromAnimal
   case class LynxPong(lynx: ActorRef) extends MessageFromAnimal
@@ -51,6 +51,7 @@ object SimulationMesages {
   case object Ping extends MessageToAnimal
   case object Eat extends MessageToAnimal 
   case object Reproduce extends MessageToAnimal
+  case object Age extends MessageToAnimal
   case class CorrectLocation(xPos: Int, yPos: Int) extends MessageToAnimal
   
  //Starts the simulation
