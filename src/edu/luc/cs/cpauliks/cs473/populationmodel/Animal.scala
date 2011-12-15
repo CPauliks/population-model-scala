@@ -4,6 +4,7 @@ import akka.actor._
 import akka.actor.Actor._
 import scala.util.Random
 import edu.luc.cs.cpauliks.cs473.populationmodel.SimulationMesages._
+
   /**
    * Animals for the simulation.
    */

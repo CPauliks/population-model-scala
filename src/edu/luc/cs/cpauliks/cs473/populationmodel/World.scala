@@ -81,7 +81,7 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 			}
 			else if (aging) {
 			  aging = false
-			  cycleWrapUp()
+			  cycleWrapUp() 
 			  startMove()
 			}
 		}
@@ -89,6 +89,7 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 
 	/**
 	 * Steps for the eating phase of a cycle
+	 * Tell certain Lynx to Eat, but we Ping everyone just to make sure they are still responding
 	 */
 	def startEat() = {
 		eating = true
@@ -100,6 +101,7 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 
 	/**
 	 * Steps for the movement phase of a cycle
+	 * Tell everyone to move and then wait for them to finish
 	 */
 	def startMove() = {
 		moving = true
@@ -113,6 +115,7 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 
 	/**
 	 * Steps for the reproduction phase of a cycle
+	 * Tell everyone to reproduce and then wait for them to finish.
 	 */
 	def startReproduce() = {
 		reproducing = true
@@ -126,6 +129,7 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 	
 	/**
 	 * Steps for the aging phase of a cycle
+	 * Tell everyone to Age and then wait for them to finish.
 	 */
 	def startAge() = {
 	  aging = true
@@ -181,10 +185,13 @@ class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: In
 		for(x <- 0 until worldSizeX) {
 			for(y <- 0 until worldSizeY) {
 				if(!lynxLocations(x)(y).isEmpty) {
+					//Get as many Lynx as there are Hares at the location.
 					val lynxThatEat  = lynxLocations(x)(y).take(hareLocations(x)(y).size)
+					//Get as many Hares to kill as we have Lynx to feed
 					val haresThatDie = hareLocations(x)(y).take(lynxThatEat.size)
+					//Tell Lynx to gain energy
 					messageAll(lynxThatEat, Eat)
-					
+					//Kill those Hares we ate
 					for(hare <- haresThatDie) {
 						removeActor(x, y, hare, hareSet, activeHares, hareLocations)
 					}
