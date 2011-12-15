@@ -4,7 +4,7 @@ import akka.actor._
 import akka.actor.Actor._
 import scala.collection.mutable.HashSet
 import scala.util.Random
-import edu.luc.cs.cpauliks.cs473.populationmodel.PopulationModel._
+import edu.luc.cs.cpauliks.cs473.populationmodel.SimulationMesages._
 
 class World(worldSizeX: Int, worldSizeY: Int, initialHares: Int, initialLynx: Int, hareBirthRate: Int, maxHareBirthRate: Int, maxHareAge: Int, lynxEnergyToReproduce: Int, energyPerHareEaten: Int, maxLynxAge: Int) extends Actor {  
 

@@ -2,6 +2,7 @@ package edu.luc.cs.cpauliks.cs473.populationmodel
 
 import akka.actor._
 import akka.actor.Actor._
+import edu.luc.cs.cpauliks.cs473.populationmodel.SimulationMesages._
 
 object PopulationModel extends App {
   
@@ -24,7 +25,10 @@ object PopulationModel extends App {
 	world.start()
 	world ! Start
   
-  /**
+}
+
+object SimulationMesages {
+    /**
    * Messages passed between the World and the Animals
    */
   trait MessageFromAnimal

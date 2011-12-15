@@ -10,5 +10,7 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/population-model-scala/lib/akka-actor-1.3-RC1-docs.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/scalatest-1.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/akka-testkit-1.3-RC1.jar" sourcepath="lib/akka-testkit-1.3-RC1-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
